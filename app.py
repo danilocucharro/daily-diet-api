@@ -1,6 +1,6 @@
 import bcrypt
 from flask import Flask, request, jsonify
-from flask_login import LoginManager, login_user, login_required, logout_user
+from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 
 from database import db
 from models.meal import Meal
@@ -66,7 +66,9 @@ def create_user():
     return jsonify({"message": "não foi possivel fazer o cadastro"}), 400
 
 
+"""MEAL ROUTES"""
 @app.route("/meal", methods=["POST"])
+@login_required
 def create_meal():
     data = request.json
     name = data.get("name")
@@ -75,7 +77,13 @@ def create_meal():
     date_and_hour = data.get("date_and_hour")
 
     if name and description and is_on_diet and date_and_hour:
-        new_meal = Meal(name=name, description=description, is_on_diet= is_on_diet, date_and_hour=date_and_hour)
+        new_meal = Meal(
+            name=name,
+            description=description,
+            is_on_diet= is_on_diet,
+            date_and_hour=date_and_hour,
+            user_id=current_user.id
+        )
         db.session.add(new_meal)
         db.session.commit()
         return jsonify({"message": "refeição cadastrada com sucesso!"})
