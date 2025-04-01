@@ -1,6 +1,6 @@
 import bcrypt
 from flask import Flask, request, jsonify
-from flask_login import LoginManager
+from flask_login import LoginManager, login_user, login_required, logout_user
 
 from database import db
 from models.meal import Meal
@@ -17,6 +17,33 @@ login_manager.init_app(app)
 
 login_manager.login_view = "login"
 
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(user_id)
+
+
+"""AUTHENTICATION ROUTES"""
+@app.route("/login", methods=["POST"])
+def login():
+    data = request.json
+    username = data.get("username")
+    password = data.get("password")
+
+    if username and password:
+        user = User.query.filter_by(username=username).first()
+        if user.username == username and bcrypt.checkpw(str.encode(password), str.encode(user.password)):
+            print(user)
+            login_user(user)
+            return jsonify({"message": "Autenticacao realizada com sucesso"})
+
+    return jsonify({"message": "Credenciais inválidas"}), 404
+
+@app.route("/logout", methods=["GET"])
+@login_required
+def logout():
+    logout_user()
+    return jsonify({"message": "logout realizado com sucesso"})
+
 
 """USER ROUTES"""
 @app.route("/user", methods=["POST"])
@@ -26,6 +53,10 @@ def create_user():
     password = data.get("password")
 
     if username and password:
+        is_user_exists = User.query.filter_by(username=username).first()
+        if is_user_exists.username == username:
+            return jsonify({"message": "esse nome usuário já existe"}), 409
+
         hashed_password = bcrypt.hashpw(str.encode(password), bcrypt.gensalt())
         new_user = User(username=username, password=hashed_password)
         db.session.add(new_user)
