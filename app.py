@@ -1,12 +1,39 @@
+import bcrypt
 from flask import Flask, request, jsonify
+from flask_login import LoginManager
+
 from database import db
 from models.meal import Meal
+from models.user import User
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = "your_secret_key"
 app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:admin1234@127.0.0.1:3306/daily-diet-api"
 
+login_manager = LoginManager()
+
 db.init_app(app)
+login_manager.init_app(app)
+
+login_manager.login_view = "login"
+
+
+"""USER ROUTES"""
+@app.route("/user", methods=["POST"])
+def create_user():
+    data = request.json
+    username = data.get("username")
+    password = data.get("password")
+
+    if username and password:
+        hashed_password = bcrypt.hashpw(str.encode(password), bcrypt.gensalt())
+        new_user = User(username=username, password=hashed_password)
+        db.session.add(new_user)
+        db.session.commit()
+        return jsonify({"message": "usuário cadastrado com sucesso"})
+
+    return jsonify({"message": "não foi possivel fazer o cadastro"}), 400
+
 
 @app.route("/meal", methods=["POST"])
 def create_meal():
