@@ -88,7 +88,7 @@ def create_meal():
         db.session.commit()
         return jsonify({"message": "refeição cadastrada com sucesso!"})
 
-    return jsonify({"message": "Dados invalidos"}), 404
+    return jsonify({"message": "Dados invalidos"}), 400
 
 
 @app.route("/meal/<int:meal_id>", methods=["PUT"])
@@ -115,6 +115,21 @@ def update_meal(meal_id):
         return jsonify({"message": "dados invalidos"}), 400
     return jsonify({"message": f"refeição {meal_id} não foi encontrada"}), 404
 
+
+@app.route("/meal/<int:meal_id>", methods=["DELETE"])
+@login_required
+def delete_meal(meal_id):
+    meal = Meal.query.get(meal_id)
+
+    if meal:
+        if meal.user_id != current_user.id:
+            return jsonify({"message": "Ação não permitida"}), 403
+        else:
+            db.session.delete(meal)
+            db.session.commit()
+            return jsonify({"message": f"refeição {meal_id} deletada com sucesso"})
+
+    return jsonify({"message": "refeição não foi encontrada"}), 404
 
 if __name__ == "__main__":
     app.run(debug=True)
