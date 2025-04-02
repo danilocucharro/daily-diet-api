@@ -92,6 +92,7 @@ def create_meal():
 
 
 @app.route("/meal/<int:meal_id>", methods=["PUT"])
+@login_required
 def update_meal(meal_id):
     data = request.json
     meal = Meal.query.get(meal_id)
@@ -99,16 +100,17 @@ def update_meal(meal_id):
     new_description = data.get("description")
     new_is_on_diet = data.get("is_on_diet")
     new_date_and_hour = data.get("date_and_hour")
-
     if meal:
         if new_name and new_description and new_is_on_diet and new_date_and_hour:
-            meal.name = new_name
-            meal.description = new_description
-            meal.is_on_diet = new_is_on_diet
-            meal.date_and_hour = new_date_and_hour
-            db.session.commit()
+            if meal.user_id == current_user.id: # apenas o usuario que criou a refeicao podera edita-la
+                meal.name = new_name
+                meal.description = new_description
+                meal.is_on_diet = new_is_on_diet
+                meal.date_and_hour = new_date_and_hour
+                db.session.commit()
 
-            return jsonify({"message": "refeição atualizada com sucesso"})
+                return jsonify({"message": "refeição atualizada com sucesso"})
+            return jsonify({"message": "Ação não permitida"}), 403
 
         return jsonify({"message": "dados invalidos"}), 400
     return jsonify({"message": f"refeição {meal_id} não foi encontrada"}), 404
