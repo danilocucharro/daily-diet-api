@@ -76,7 +76,7 @@ def create_meal():
     is_on_diet = data.get("is_on_diet")
     date_and_hour = data.get("date_and_hour")
 
-    if name and description and is_on_diet and date_and_hour:
+    if name and description and date_and_hour:
         new_meal = Meal(
             name=name,
             description=description,
@@ -153,6 +153,27 @@ def read_meals():
         return jsonify({"meals": meals_list})
 
     return jsonify({"message": "não foram encontradas refeições do usuário atual"}), 404
+
+
+@app.route("/meal/<int:meal_id>", methods=["GET"])
+@login_required
+def read_meal(meal_id):
+    meal = Meal.query.get(meal_id)
+    if meal:
+        if meal.user_id != current_user.id:
+            return jsonify({"message": "O usuário apenas pode consultar refeições que ele registrou"})
+
+        meal_to_dict = {
+            "id": meal.id,
+            "name": meal.name,
+            "description": meal.description,
+            "date_and_hour": meal.date_and_hour,
+            "is_on_diet": meal.is_on_diet,
+            "user_id": meal.user_id
+        }
+        return jsonify({"meal": meal_to_dict})
+
+    return jsonify({"message": "refeição não foi encontrada"}), 404
 
 
 if __name__ == "__main__":
