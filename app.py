@@ -131,5 +131,29 @@ def delete_meal(meal_id):
 
     return jsonify({"message": "refeição não foi encontrada"}), 404
 
+
+@app.route("/meal", methods=["GET"])
+@login_required
+def read_meals():
+    meals = Meal.query.filter_by(user_id=current_user.id).all()
+    meals_list = []
+
+    for meal in meals:
+        meal_to_dict = {
+            "id": meal.id,
+            "name": meal.name,
+            "description": meal.description,
+            "date_and_hour": meal.date_and_hour,
+            "is_on_diet": meal.is_on_diet,
+            "user_id": meal.user_id
+        }
+        meals_list.append(meal_to_dict)
+
+    if meals_list:
+        return jsonify({"meals": meals_list})
+
+    return jsonify({"message": "não foram encontradas refeições do usuário atual"}), 404
+
+
 if __name__ == "__main__":
     app.run(debug=True)
